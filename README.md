@@ -3,7 +3,7 @@
 ![Python Support](https://img.shields.io/badge/python-3.8%2B-blue) ![License](https://img.shields.io/badge/license-MIT-green) ![CI Status](https://img.shields.io/badge/CI-passing-brightgreen)
 
 
-A minimal and streamlined implementation of **AlphaEvolve** *([Novikov et al., 2025](https://arxiv.org/abs/2506.13131))* applied to one-dimensional online bin-packing. Demonstrates how iterative invention and refinement using LLMs can yield heuristics that outperform classical methods.
+A minimal and streamlined implementation of **AlphaEvolve** *([Novikov et al., 2025](https://arxiv.org/abs/2506.13131))* applied to one-dimensional online bin-packing. We Demonstrate how iterative invention and refinement using LLMs can yield heuristics that outperform classical methods.
 
 ![Figure 1: Performance over generations](figure.png)
 
