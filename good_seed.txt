@@ -1,0 +1,133 @@
+1) Score: 4.47%
+# This heuristic scores bins by their "proximity to dynamic modular thresholds":
+# it computes, for each bin, the remainder when reduced leftover capacity after placing the item 
+# is divided by a dynamic threshold based on the item size and bin capacity combined,
+# assigning highest scores to bins where leftover space aligns closely to these modular thresholds,
+# thus promoting periodic, structured packing that can foster better distribution and reuse of bins in a cyclical pattern.
+leftover = bins - item
+valid = leftover >= 0
+thresholds = np.maximum(1, (item + bins) / 3)
+remainders = np.where(valid, np.minimum(leftover % thresholds, thresholds - (leftover % thresholds)), np.inf)
+scores = np.where(valid, 1 / (remainders + 1e-6), 0.0)
+
+
+2) Score: 4.15%
+# This heuristic prioritizes bins that minimize leftover space after placing the item, but also boosts bins with larger leftover slightly to avoid overly tight packing that can block future fits; scores combine inverse leftover with a small linear bonus on leftover space.
+space_left = bins - item
+valid_mask = space_left >= 0
+inverse_leftover = np.where(valid_mask, 1.0 / (space_left + 1e-9), 0.0)
+linear_bonus = np.where(valid_mask, space_left * 0.01, 0.0)
+scores = inverse_leftover + linear_bonus
+
+
+3) Score: 4.25%
+# This improved heuristic introduces a more nuanced combination of features by weighting the fit quality, residual distance, and utilization with dynamic, data-driven coefficients to better discriminate ideal bins. It removes overly aggressive penalizations and instead smoothly adjusts scores based on residual size, capacity utilization, and fit proximity, reducing the average excess and promoting more balanced placements.
+residuals = bins - item
+# Prevent division by zero or negative residuals
+residuals_safe = np.maximum(residuals, 1e-8)
+# Calculate normalized residual ratios to bin capacity
+fit_ratios = residuals_safe / bins
+# Use a softer cap on fit ratios to prioritize bins that fit well
+fit_norm = np.clip(fit_ratios / 0.25, 0, 1)
+# Evaluate how close the residual is to being half the capacity, favoring balanced residuals
+item_ratio = item / bins
+scaling_factor = 0.15
+residual_proximity = 1 / (1 + ((item_ratio - 0.5) / scaling_factor) ** 2)
+# Compute utilization emphasizing bins that are moderately filled
+utilization = (bins - residuals) / bins
+utilization_score = np.sqrt(utilization)  # emphasize higher utilization but with diminishing returns
+# Combine features with adaptive weights based on residual size and capacity
+score_fit = 1 - fit_norm  # favor bins with smaller residuals
+score_residual = residual_proximity  # favor residuals near half capacity
+score_util = utilization_score  # favor higher utilization
+# Combine with coefficients that adapt based on residual size
+scores = (
+    0.4 * score_fit +
+    0.3 * score_residual +
+    0.3 * score_util
+)
+# Slightly boost scores for bins with residuals within 1% of capacity, indicating excellent fit
+tight_fit_mask = residuals <= (0.01 * bins)
+scores[tight_fit_mask] += 0.1
+# Subtle penalization for near-full bins, avoiding overly harsh penalties
+almost_full_mask = residuals <= (0.005 * bins)
+scores[almost_full_mask] -= 0.1
+# Penalize bins where residuals are more than 60% of capacity to discourage poor fits
+large_residual_mask = residuals > (0.6 * bins)
+scores[large_residual_mask] *= 0.6
+# Clamp scores to [0, 1]
+scores = np.clip(scores, 0, 1)
+# Reduce scores slightly for very tiny residuals to prevent overfitting
+tiny_residual_mask = residuals <= 1e-4 * bins
+scores[tiny_residual_mask] -= 0.03
+# Ensure scores are non-negative after adjustments
+scores = np.maximum(scores, 0)
+
+    return scores
+
+
+4) Score: 4.27%
+# This enhanced heuristic introduces an adaptive weighting scheme that dynamically emphasizes fit accuracy, residual balance, and utilization, while incorporating non-linear transformations and additional penalties to better discriminate bin suitability, reduce overfitting, and promote more balanced bin utilization.
+residuals = bins - item
+residuals_safe = np.maximum(residuals, 1e-8)
+fit_ratio = residuals_safe / bins
+# Sharpen the preference for small residuals with a steeper exponential decay
+fit_score = np.exp(-15 * fit_ratio)
+# Encourage residuals centered around half the capacity to balance load distribution
+item_ratio = item / bins
+scaling = 0.2
+balance_score = np.exp(-((item_ratio - 0.5) / scaling) ** 2)
+# Prioritize utilization but add a non-linear penalty for over-utilization to prevent overfilling
+utilization = (bins - residuals) / bins
+utilization_score = np.power(utilization, 1.0)
+over_util_mask = utilization > 0.95
+utilization_score[over_util_mask] -= (utilization[over_util_mask] - 0.95) * 2
+# Combine the three criteria with refined weights, emphasizing fit and utilization
+score_composite = (
+    0.65 * fit_score +
+    0.15 * balance_score +
+    0.20 * utilization_score
+)
+# Boost bins with residuals very close to zero to favor tight packing; use a softer adjustment
+close_zero_mask = residuals <= (0.0005 * bins)
+score_composite[close_zero_mask] += 0.15
+# Penalize bins that are nearly full with a smoother decay to discourage overfilling
+almost_full_mask = residuals >= (0.995 * bins)
+score_composite[almost_full_mask] -= 0.10
+# Heavily penalize large residuals to avoid poor fits, but less harsh than before
+large_residual_mask = residuals > (0.85 * bins)
+score_composite[large_residual_mask] *= 0.4
+# Slight penalty for extremely tight residuals to maintain diversity
+tiny_residual_mask = residuals <= 1e-5 * bins
+score_composite[tiny_residual_mask] -= 0.02
+# Apply sigmoid-like normalization to keep scores within [0,1], reducing over-emphasis on extremes
+scores = 1 / (1 + np.exp(-10 * (score_composite - 0.5)))
+scores = np.clip(scores, 0, 1)
+
+
+5) Score: 4.50%
+# This heuristic prioritizes bins with minimal leftover after placing the item to pack tightly,
+# but also prefers bins that maintain leftover capacities close to half the bin size,
+# leveraging balance to potentially leave space for medium-sized future items.
+leftover = bins - item
+valid = leftover >= 0
+half_bins = bins / 2
+dist_to_half = np.abs(leftover - half_bins)
+scores = np.where(valid, 1 / (leftover + 1e-6) + 1 / (dist_to_half + 1e-6), 0.0)
+
+
+6) Score: 3.90%
+
+# Strategy: Prioritize bins minimizing leftover capacity after placement, 
+# penalize bins that would be nearly full to encourage better space distribution, 
+# and strongly disallow bins that can't fit the item by assigning zero score.
+leftover = bins - item
+valid = leftover >= 0
+# Avoid division by zero by adding small epsilon, and emphasize bins with low leftover
+scores = np.where(valid, 1.0 / (leftover + 1e-5), 0.0)
+# Additionally penalize bins that would be almost full to avoid tight fits that hurt future packing
+fullness_ratio = (item) / bins
+penalty = np.exp(-5 * fullness_ratio)  # values close to 1 for smaller items relative to bin, near 0 for tight fits
+scores = scores * penalty
+
+
