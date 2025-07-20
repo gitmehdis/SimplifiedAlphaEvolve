@@ -1,9 +1,6 @@
 # A Minimal Reimplementation of AlphaEvolve for Heuristic Discovery 
 
-![Python Support](https://img.shields.io/badge/python-3.8%2B-blue) ![License](https://img.shields.io/badge/license-MIT-green) ![CI Status](https://img.shields.io/badge/CI-passing-brightgreen)
-
-
-A minimal and streamlined implementation of **AlphaEvolve** *([Novikov et al., 2025](https://arxiv.org/abs/2506.13131))* applied to one-dimensional online bin-packing. We demonstrate how iterative invention and refinement using LLMs can yield heuristics that outperform classical methods.
+A minimal and streamlined implementation of **AlphaEvolve** *([Novikov et al., 2025](https://arxiv.org/abs/2506.13131))* applied to one-dimensional online bin packing. We demonstrate how iterative algorithmic invention and refinement using LLMs can produce heuristics that outperform classic methods.
 
 ![Figure 1: Performance over generations](figure.png)
 
@@ -21,9 +18,9 @@ AlphaEvolve embeds LLM-guided heuristic generation into a population-based evolu
 
 We apply this to the online one-dimensional bin packing problem, a classic NP-hard task in which items arrive sequentially and must be placed into bins of given capacity without relocation, minimizing the total number of bins used.
 
-This toy implementation showcases the core invent/refine dynamics on standard bin-packing benchmarks such as OR3 and Weibull‑5k. By leveraging only modest computational resources (e.g., GPT-4.1-nano), it discovers a novel heuristic that closely matches the performance of the best heuristic identified in FunSearch (Romera-Paredes et al., 2024:
+This toy implementation showcases the core invent/refine dynamics on standard bin-packing benchmarks such as OR3 and Weibull‑5k. By leveraging only modest computational resources (e.g., GPT-4.1-nano), it discovers a novel heuristic that nearly matches the performance of the best heuristic identified in FunSearch (Romera-Paredes et al., 2024:
 [paper](https://deepmind.google/discover/blog/funsearch-making-new-discoveries-in-mathematical-sciences-using-large-language-models/) and
-[code](https://github.com/google-deepmind/funsearch)), while exhibiting stronger generalization to unseen datasets.
+[code](https://github.com/google-deepmind/funsearch)) on OR3 dataset, while exhibiting stronger generalization to unseen datasets.
 
 ## Technical Report
 
@@ -35,7 +32,7 @@ For full technical details, including pseudocode and theoretical motivation, see
 
 ### Prerequisites
 - Python 3.7+
-- OpenAI API key (get one at https://platform.openai.com/)
+- OpenAI API key 
 - Required packages: `pip install numpy openai`
 
 
